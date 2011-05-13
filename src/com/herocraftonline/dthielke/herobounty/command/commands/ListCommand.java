@@ -17,7 +17,7 @@ public class ListCommand extends BaseCommand {
         super(plugin);
         name = "List";
         description = "Lists available bounties";
-        usage = "§e/bounty list §8[page#]";
+        usage = "\u00A7e/bounty list \u00A78[page#]";
         minArgs = 0;
         maxArgs = 1;
         identifiers.add("bounty list");
@@ -54,16 +54,21 @@ public class ListCommand extends BaseCommand {
                 } else if (currentPage > numPages) {
                     Messaging.send(plugin, sender, "Invalid page number.");
                 } else {
-                    sender.sendMessage("§cAvailable Bounties (Page §f#" + currentPage + "§c of §f" + numPages + "§c):");
+                    sender.sendMessage("\u00A7cAvailable Bounties (Page \u00A7f#" + currentPage + "\u00A7c of \u00A7f" + numPages + "\u00A7c):");
                     for (int i = pageStart; i <= pageEnd; i++) {
                         Bounty b = bounties.get(i);
-                        String msg = "§f" + (i + 1) + ". §e";
+                        String msg = "\u00A7f" + (i + 1) + ". \u00A7e";
                         if (!plugin.getBountyManager().usesAnonymousTargets()) {
-                            msg += b.getTarget() + "§f - §e";
+                        	Player t = plugin.getServer().getPlayer(b.getTarget());
+                        	if (t != null && t.isOnline())
+                        		msg += "\u00A7a0 \u00A7e";
+                        	else
+                        		msg += "\u00A7cX \u00A7e";
+                        	msg += b.getTarget() + "\u00A7f - \u00A7e";
                         }
-                        msg += iConomy.format(b.getValue()) + "§f - §eFee: " + iConomy.format(b.getContractFee());
+                        msg += iConomy.format(b.getValue()) + "\u00A7f - \u00A7eFee: " + iConomy.format(b.getContractFee());
                         if (senderName.equalsIgnoreCase(b.getOwner())) {
-                            msg += "§7 (posted by you)";
+                            msg += "\u00A77 (posted by you)";
                         }
                         sender.sendMessage(msg);
                     }

@@ -43,7 +43,7 @@ public class ConfigManager {
         bountyManager.setPayInconvenience(config.getBoolean("pay-inconvenience", true));
         bountyManager.setNegativeBalances(config.getBoolean("allow-negative-balances", true));
         bountyManager.setLocationRounding(config.getInt("location-rounding", 100));
-        plugin.setTag(config.getString("bounty-tag", "&e[Bounty] ").replace('&', '§'));
+        plugin.setTag(config.getString("bounty-tag", "&e[Bounty] ").replace('&', '\u00A7'));
         respectUntargettables = config.getBoolean("respect-untargettables", true);
     }
 
