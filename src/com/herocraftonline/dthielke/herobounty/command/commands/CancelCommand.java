@@ -55,10 +55,17 @@ public class CancelCommand extends BaseCommand {
                     if (!hunters.isEmpty()) {
                         int inconvenience = (int) Math.floor((double) bounty.getPostingFee() / hunters.size());
                         for (String hunterName : bounty.getHunters()) {
-                            reimbursed = econ.add(hunterName, bounty.getContractFee()) != Double.NaN;
+                            double contractFee = bounty.getContractFee();
+                            if(bounty.getHunterDeferFee(hunterName) != Double.NaN) {
+                                contractFee *= bounty.getHunterDeferFee(hunterName);
+                            }
+
+                            reimbursed = econ.add(hunterName, contractFee) != Double.NaN;
+
                             if (plugin.getBountyManager().shouldPayInconvenience()) {
                                 econ.add(hunterName, inconvenience);
                             }
+
 
                             Player hunter = plugin.getServer().getPlayer(hunterName);
                             if (hunter != null) {
