@@ -11,12 +11,10 @@ import com.herocraftonline.dthielke.herobounty.Bounty;
 import com.herocraftonline.dthielke.herobounty.HeroBounty;
 import com.herocraftonline.dthielke.herobounty.util.Economy;
 import com.herocraftonline.dthielke.herobounty.util.Messaging;
-import com.iConomy.iConomy;
-import com.iConomy.system.Account;
 
 @SuppressWarnings("unused")
 public class BountyManager {
-    
+
     private static final long EXPIRATION_DELAY = 10 * 1000;
     private static final long EXPIRATION_PERIOD = 5 * 60 * 1000;
 
@@ -25,11 +23,14 @@ public class BountyManager {
     private double minimumValue;
     private double placementFee;
     private double contractFee;
+    private double contractDeferFee;
     private double deathFee;
     private boolean payInconvenience;
     private boolean anonymousTargets;
     private boolean negativeBalances;
     private int duration;
+    private int durationReduction;
+    private int contractDelay;
     private int locationRounding;
 
     public BountyManager(HeroBounty plugin) {
@@ -40,11 +41,11 @@ public class BountyManager {
         TimerTask expirationChecker = new ExpirationChecker(plugin);
         plugin.getServer().getScheduler().scheduleAsyncRepeatingTask(plugin, expirationChecker, EXPIRATION_DELAY, EXPIRATION_PERIOD);
     }
-    
+
     public void stopExpirationTimer() {
         plugin.getServer().getScheduler().cancelTasks(plugin);
     }
-    
+
     public boolean completeBounty(int id, String hunterName) {
         Bounty bounty = bounties.get(id);
         Player hunter = plugin.getServer().getPlayer(hunterName);
@@ -52,14 +53,20 @@ public class BountyManager {
         if (hunter == null || target == null) {
             return false;
         }
-        
+
         bounties.remove(id);
         Collections.sort(bounties);
         plugin.saveData();
 
         Economy econ = plugin.getEconomy();
         double penalty = econ.subtract(target.getName(), bounty.getDeathPenalty(), negativeBalances);
-        double award = econ.add(hunter.getName(), bounty.getValue());
+
+        double value = bounty.getValue();
+        if(bounty.getHunterDeferFee(hunter.getName()) != Double.NaN) {
+            value -= bounty.getContractFee() * (1 - bounty.getHunterDeferFee(hunterName));
+        }
+
+        double award = econ.add(hunter.getName(), value);
         if (penalty != Double.NaN && award != Double.NaN) {
             String awardStr = econ.format(award);
             String penaltyStr = econ.format(penalty);
@@ -68,6 +75,32 @@ public class BountyManager {
             Messaging.broadcast(plugin, "$1 has collected a bounty on $2's head!", hunter.getName(), bounty.getTargetDisplayName());
         }
         return true;
+    }
+
+    public boolean checkBountyExpiration(int id) {
+        Bounty bounty = this.getBounties().get(id);
+
+        if (bounty.getMillisecondsLeft() <= 0) {
+            for(String hunterName : bounty.getHunters()) {
+                Player hunter = plugin.getServer().getPlayer(hunterName);
+                if(hunter != null) {
+                     Messaging.send(plugin, hunter, "Your bounty on $1 has expired.", bounty.getTargetDisplayName());
+                }
+            }
+
+            Player owner = plugin.getServer().getPlayer(bounty.getOwner());
+            if(owner != null) {
+                Messaging.send(plugin, owner, "Your bounty on $1 has expired.", bounty.getTargetDisplayName());
+            }
+
+            bounties.remove(id);
+            Collections.sort(bounties);
+            plugin.saveData();
+
+            return true;
+        }
+
+        return false;
     }
 
     public boolean isTarget(Player player) {
@@ -135,6 +168,14 @@ public class BountyManager {
         this.contractFee = contractFee;
     }
 
+    public double getContractDeferFee() {
+        return this.contractDeferFee;
+    }
+
+    public void setContractDeferFee(double contractDeferFee) {
+        this.contractDeferFee = contractDeferFee;
+    }
+
     public double getDeathFee() {
         return deathFee;
     }
@@ -175,6 +216,22 @@ public class BountyManager {
         this.duration = duration;
     }
 
+     public int getDurationReduction() {
+        return this.durationReduction;
+    }
+
+    public void setDurationReduction(int durationReduction) {
+        this.durationReduction = durationReduction;
+    }
+
+    public int getContractDelay() {
+        return this.contractDelay;
+    }
+
+    public void setContractDelay(int contractDelay) {
+        this.contractDelay = contractDelay;
+    }
+
     public int getLocationRounding() {
         return locationRounding;
     }
@@ -184,7 +241,6 @@ public class BountyManager {
     }
 
     public class ExpirationChecker extends TimerTask {
-
         private HeroBounty plugin;
 
         public ExpirationChecker(HeroBounty plugin) {
@@ -197,19 +253,8 @@ public class BountyManager {
 
         @Override
         public void run() {
-            Bounty[] bounties = plugin.getBountyManager().getBounties().toArray(new Bounty[0]);
-            for (Bounty bounty : bounties) {
-                String[] hunters = bounty.getExpirations().keySet().toArray(new String[0]);
-                for (String hunterName : hunters) {
-                    if (bounty.getMillisecondsLeft(hunterName) <= 0) {
-                        Player hunter = plugin.getServer().getPlayer(hunterName);
-                        bounty.removeHunter(hunterName);
-                        plugin.saveData();
-                        if (hunter != null) {
-                            Messaging.send(plugin, hunter, "Your bounty on $1 has expired.", bounty.getTargetDisplayName());
-                        }
-                    }
-                }
+            for(int i = 0; i < bounties.size(); i++) {
+                checkBountyExpiration(i);
             }
         }
 

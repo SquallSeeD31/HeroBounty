@@ -1,6 +1,6 @@
 /**
  * Copyright (C) 2011 DThielke <dave.thielke@gmail.com>
- * 
+ *
  * This work is licensed under the Creative Commons Attribution-NonCommercial-NoDerivs 3.0 Unported License.
  * To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-nd/3.0/ or send a letter to
  * Creative Commons, 171 Second Street, Suite 300, San Francisco, California, 94105, USA.
@@ -18,6 +18,9 @@ import org.bukkit.event.entity.EntityDamageByProjectileEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntityListener;
+
+import com.herocraftonline.dthielke.herobounty.util.Economy;
+import com.herocraftonline.dthielke.herobounty.util.Messaging;
 
 public class HeroBountyEntityListener extends EntityListener {
     public static HeroBounty plugin;
@@ -74,6 +77,32 @@ public class HeroBountyEntityListener extends EntityListener {
             if (b.getTarget().equalsIgnoreCase(defenderName) && b.isHunter(attackerName)) {
                 plugin.getBountyManager().completeBounty(i, attackerName);
                 deathRecords.remove(defenderName);
+
+                return;
+            } else if (b.getTarget().equalsIgnoreCase(attackerName) && b.isHunter(defenderName)) {
+                if(b.getHunterDeferFee(defenderName) != Double.NaN) {
+                    Economy econ = plugin.getEconomy();
+                    double contractFee = b.getContractFee() * (1 - b.getHunterDeferFee(defenderName));
+                    econ.subtract(defenderName, contractFee, true);
+                }
+
+                b.removeHunter(defenderName);
+                deathRecords.remove(defenderName);
+
+                b.decreaseExpiration(plugin.getBountyManager().getDurationReduction());
+                if(!plugin.getBountyManager().checkBountyExpiration(i)) {
+                    int durationReduction = plugin.getBountyManager().getDurationReduction();
+                    int durationReductionRelativeTime = (durationReduction < 60) ? durationReduction : (durationReduction < (60 * 24)) ? durationReduction / 60 : (durationReduction < (60 * 24 * 7)) ? durationReduction / (60 * 24) : durationReduction / (60 * 24 * 7);
+                    String durationReductionRelativeAmount = (durationReduction < 60) ? " minutes" : (durationReduction < (60 * 24)) ? " hours" : (durationReduction < (60 * 24 * 7)) ? " days" : " weeks";
+                    if(durationReductionRelativeTime == 1) durationReductionRelativeAmount = durationReductionRelativeAmount.substring(0, durationReductionRelativeAmount.length() - 1);
+
+                    Messaging.send(plugin, defender, "The expiration time for your bounty on $1 has beend reduced by $2$3.", b.getTargetDisplayName(), Integer.toString(durationReductionRelativeTime), durationReductionRelativeAmount);
+
+                    if(plugin.getServer().getPlayer(b.getOwner()) != null) {
+                        Messaging.send(plugin, plugin.getServer().getPlayer(b.getOwner()), "The expiration time for your bounty on $1 has beend reduced by $2$3.", b.getTargetDisplayName(), Integer.toString(durationReductionRelativeTime), durationReductionRelativeAmount);
+                    }
+                }
+
                 return;
             }
         }

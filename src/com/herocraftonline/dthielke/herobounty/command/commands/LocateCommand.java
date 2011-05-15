@@ -44,6 +44,9 @@ public class LocateCommand extends BaseCommand {
                             Location loc = roundLocation(target.getLocation(), locationRounding);
                             hunter.setCompassTarget(loc);
                             Messaging.send(plugin, hunter, "Compass now points near $1.", target.getDisplayName());
+
+                            Location hunterLoc = hunter.getLocation();
+                            Messaging.send(plugin, target, "You are being targeted by $1 at X: $2, Z: $3.", hunter.getDisplayName(), Integer.toString(hunterLoc.getBlockX()), Integer.toString(hunterLoc.getBlockZ()));
                         } else {
                             Messaging.send(plugin, hunter, "Target is offline.");
                         }

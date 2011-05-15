@@ -36,13 +36,17 @@ public class CancelCommand extends BaseCommand {
                 Bounty bounty = bounties.get(id);
                 int value = bounty.getValue();
                 if (bounty.getOwner().equals(ownerName)) {
+                    double timeRemaining = bounty.getMillisecondsLeft();
+                    double expiration = bounty.getDuration() * 60 * 1000;
+
                     bounties.remove(bounty);
                     Collections.sort(bounties);
 
                     Economy econ = plugin.getEconomy();
-                    boolean reimbursed = econ.add(ownerName, value) != Double.NaN;
+                    double refund = (timeRemaining / expiration) * value;
+                    boolean reimbursed = econ.add(ownerName, refund) != Double.NaN;
                     if (reimbursed) {
-                        Messaging.send(plugin, owner, "You have been reimbursed $1 for your bounty.", econ.format(value));
+                        Messaging.send(plugin, owner, "You have been reimbursed $1 for your bounty.", econ.format(refund));
                     } else {
                         Messaging.send(plugin, owner, "You have cancelled your bounty on $1.", bounty.getTargetDisplayName());
                     }
