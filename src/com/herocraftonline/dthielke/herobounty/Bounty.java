@@ -35,12 +35,11 @@ public class Bounty extends TimerTask implements Comparable<Bounty> {
     private int deathPenalty = 0;
     private int contractFee = 0;
     private int duration = 0;
-    private Date expiration = new Date();
+    private Date expiration = null;
 
     public Bounty(){}
 
-    public Bounty(HeroBounty plugin, String owner, String ownerDisplayName, String target, String targetDisplayName, int value, int postingFee, int contractFee, int deathPenalty, int duration) {
-        this.plugin = plugin;
+    public Bounty(String owner, String ownerDisplayName, String target, String targetDisplayName, int value, int postingFee, int contractFee, int deathPenalty, int duration) {
         this.owner = owner;
         this.ownerDisplayName = ownerDisplayName;
         this.target = target;
@@ -50,6 +49,16 @@ public class Bounty extends TimerTask implements Comparable<Bounty> {
         this.contractFee = contractFee;
         this.deathPenalty = deathPenalty;
         this.duration = duration;
+    }
+
+    public void delayActivation(HeroBounty plugin) {
+        this.plugin = plugin;
+
+        plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, this, plugin.getBountyManager().getContractDelay() * 20);
+    }
+
+    public boolean isActive() {
+        return this.getExpiration() != null;
     }
 
     public void addHunter(String name) {
@@ -108,12 +117,18 @@ public class Bounty extends TimerTask implements Comparable<Bounty> {
         this.expiration = expiration;
     }
 
-    public void decreaseExpiration(int minutes) {
+    public boolean decreaseExpiration(int minutes) {
         GregorianCalendar exp = new GregorianCalendar();
         exp.setTime(expiration);
         exp.add(Calendar.MINUTE, -1 * minutes);
 
         this.setExpiration(exp.getTime());
+
+        if(this.getMillisecondsLeft() <= 0) {
+            return false;
+        }
+
+        return true;
     }
 
     public String getOwner() {
@@ -225,6 +240,7 @@ public class Bounty extends TimerTask implements Comparable<Bounty> {
         expiration.add(Calendar.MINUTE, this.duration);
         this.expiration = expiration.getTime();
 
+        this.plugin.getBountyManager().getInactiveBounties().remove(this);
         this.plugin.getBountyManager().getBounties().add(this);
         Collections.sort(this.plugin.getBountyManager().getBounties());
 

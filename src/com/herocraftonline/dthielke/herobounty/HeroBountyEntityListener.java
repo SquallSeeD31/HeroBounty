@@ -75,11 +75,17 @@ public class HeroBountyEntityListener extends EntityListener {
             Bounty b = bounties.get(i);
 
             if (b.getTarget().equalsIgnoreCase(defenderName) && b.isHunter(attackerName)) {
+                plugin.getBountyManager().checkBountyExpiration();
+                if(!plugin.getBountyManager().getBounties().contains(b)) return;
+
                 plugin.getBountyManager().completeBounty(i, attackerName);
                 deathRecords.remove(defenderName);
 
                 return;
             } else if (b.getTarget().equalsIgnoreCase(attackerName) && b.isHunter(defenderName)) {
+                plugin.getBountyManager().checkBountyExpiration();
+                if(!plugin.getBountyManager().getBounties().contains(b)) return;
+
                 if(b.getHunterDeferFee(defenderName) != Double.NaN) {
                     Economy econ = plugin.getEconomy();
                     double contractFee = b.getContractFee() * (1 - b.getHunterDeferFee(defenderName));
@@ -89,8 +95,7 @@ public class HeroBountyEntityListener extends EntityListener {
                 b.removeHunter(defenderName);
                 deathRecords.remove(defenderName);
 
-                b.decreaseExpiration(plugin.getBountyManager().getDurationReduction());
-                if(!plugin.getBountyManager().checkBountyExpiration(i)) {
+                if(b.decreaseExpiration(plugin.getBountyManager().getDurationReduction())) {
                     int durationReduction = plugin.getBountyManager().getDurationReduction();
                     int durationReductionRelativeTime = (durationReduction < 60) ? durationReduction : (durationReduction < (60 * 24)) ? durationReduction / 60 : (durationReduction < (60 * 24 * 7)) ? durationReduction / (60 * 24) : durationReduction / (60 * 24 * 7);
                     String durationReductionRelativeAmount = (durationReduction < 60) ? " minutes" : (durationReduction < (60 * 24)) ? " hours" : (durationReduction < (60 * 24 * 7)) ? " days" : " weeks";

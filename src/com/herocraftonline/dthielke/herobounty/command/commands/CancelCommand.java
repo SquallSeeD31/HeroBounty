@@ -32,8 +32,19 @@ public class CancelCommand extends BaseCommand {
             String ownerName = owner.getName();
             List<Bounty> bounties = plugin.getBountyManager().getBounties();
             int id = BountyManager.parseBountyId(args[0], bounties);
+
+            plugin.getBountyManager().checkBountyExpiration();
+
             if (id != -1) {
                 Bounty bounty = bounties.get(id);
+
+                // Stops when this bounty has expired (following the check)
+                if(!plugin.getBountyManager().getBounties().contains(bounty)) {
+                    Messaging.send(plugin, owner, "This bounty has expired.");
+
+                    return;
+                }
+
                 int value = bounty.getValue();
                 if (bounty.getOwner().equals(ownerName)) {
                     double timeRemaining = bounty.getMillisecondsLeft();
@@ -44,6 +55,10 @@ public class CancelCommand extends BaseCommand {
 
                     Economy econ = plugin.getEconomy();
                     double refund = (timeRemaining / expiration) * value;
+
+                    // Prevent negative
+                    if(refund < 0) refund = 0;
+
                     boolean reimbursed = econ.add(ownerName, refund) != Double.NaN;
                     if (reimbursed) {
                         Messaging.send(plugin, owner, "You have been reimbursed $1 for your bounty.", econ.format(refund));

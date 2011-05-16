@@ -3,6 +3,7 @@ package com.herocraftonline.dthielke.herobounty.bounties;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.TimerTask;
 
 import org.bukkit.entity.Player;
@@ -14,12 +15,9 @@ import com.herocraftonline.dthielke.herobounty.util.Messaging;
 
 @SuppressWarnings("unused")
 public class BountyManager {
-
-    private static final long EXPIRATION_DELAY = 10 * 1000;
-    private static final long EXPIRATION_PERIOD = 5 * 60 * 1000;
-
     private HeroBounty plugin;
-    private List<Bounty> bounties;
+    private List<Bounty> bounties = new ArrayList<Bounty>();
+    private List<Bounty> inactiveBounties = new ArrayList<Bounty>();
     private double minimumValue;
     private double placementFee;
     private double contractFee;
@@ -37,17 +35,10 @@ public class BountyManager {
         this.plugin = plugin;
     }
 
-    public void startExpirationTimer() {
-        TimerTask expirationChecker = new ExpirationChecker(plugin);
-        plugin.getServer().getScheduler().scheduleAsyncRepeatingTask(plugin, expirationChecker, EXPIRATION_DELAY, EXPIRATION_PERIOD);
-    }
-
-    public void stopExpirationTimer() {
-        plugin.getServer().getScheduler().cancelTasks(plugin);
-    }
-
     public boolean completeBounty(int id, String hunterName) {
         Bounty bounty = bounties.get(id);
+
+
         Player hunter = plugin.getServer().getPlayer(hunterName);
         Player target = plugin.getServer().getPlayer(bounty.getTarget());
         if (hunter == null || target == null) {
@@ -77,30 +68,28 @@ public class BountyManager {
         return true;
     }
 
-    public boolean checkBountyExpiration(int id) {
-        Bounty bounty = this.getBounties().get(id);
+    public void checkBountyExpiration() {
+        for(int i = 0; i < this.getBounties().size(); i++) {
+            Bounty bounty = this.getBounties().get(i);
 
-        if (bounty.getMillisecondsLeft() <= 0) {
-            for(String hunterName : bounty.getHunters()) {
-                Player hunter = plugin.getServer().getPlayer(hunterName);
-                if(hunter != null) {
-                     Messaging.send(plugin, hunter, "Your bounty on $1 has expired.", bounty.getTargetDisplayName());
+            if (bounty.getMillisecondsLeft() <= 0) {
+                for(String hunterName : bounty.getHunters()) {
+                    Player hunter = plugin.getServer().getPlayer(hunterName);
+                    if(hunter != null) {
+                         Messaging.send(plugin, hunter, "Your bounty on $1 has expired.", bounty.getTargetDisplayName());
+                    }
                 }
+
+                Player owner = plugin.getServer().getPlayer(bounty.getOwner());
+                if(owner != null) {
+                    Messaging.send(plugin, owner, "Your bounty on $1 has expired.", bounty.getTargetDisplayName());
+                }
+
+                bounties.remove(i);
+                Collections.sort(bounties);
+                plugin.saveData();
             }
-
-            Player owner = plugin.getServer().getPlayer(bounty.getOwner());
-            if(owner != null) {
-                Messaging.send(plugin, owner, "Your bounty on $1 has expired.", bounty.getTargetDisplayName());
-            }
-
-            bounties.remove(id);
-            Collections.sort(bounties);
-            plugin.saveData();
-
-            return true;
         }
-
-        return false;
     }
 
     public boolean isTarget(Player player) {
@@ -141,7 +130,25 @@ public class BountyManager {
     }
 
     public void setBounties(List<Bounty> bounties) {
+        for(int i = 0; i < bounties.size(); i++) {
+            if(!bounties.get(i).isActive()) this.getInactiveBounties().add(bounties.remove(i));
+        }
+
         this.bounties = bounties;
+    }
+
+    public List<Bounty> getInactiveBounties() {
+        return inactiveBounties;
+    }
+
+    public void setInactiveBounties(List<Bounty> inactiveBounties) {
+        this.inactiveBounties = inactiveBounties;
+    }
+
+    public void redelayInactiveBounties() {
+        for(Bounty bounty : this.getInactiveBounties()) {
+            bounty.delayActivation(this.plugin);
+        }
     }
 
     public double getMinimumValue() {
@@ -238,28 +245,5 @@ public class BountyManager {
 
     public void setLocationRounding(int locationRounding) {
         this.locationRounding = locationRounding;
-    }
-
-    public class ExpirationChecker extends TimerTask {
-        private HeroBounty plugin;
-
-        public ExpirationChecker(HeroBounty plugin) {
-            this.plugin = plugin;
-        }
-
-        public HeroBounty getPlugin() {
-            return plugin;
-        }
-
-        @Override
-        public void run() {
-            for(int i = 0; i < bounties.size(); i++) {
-                checkBountyExpiration(i);
-            }
-        }
-
-        public void setPlugin(HeroBounty plugin) {
-            this.plugin = plugin;
-        }
     }
 }

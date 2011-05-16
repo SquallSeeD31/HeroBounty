@@ -60,11 +60,14 @@ public class NewCommand extends BaseCommand {
                                 int deathPenalty = (int) (plugin.getBountyManager().getDeathFee() * award);
                                 int duration = this.plugin.getBountyManager().getDuration();
 
-                                Bounty bounty = new Bounty(this.plugin, owner.getName(), owner.getDisplayName(), targetName, target.getDisplayName(), award, postingFee, contractFee, deathPenalty, duration);
+                                Bounty bounty = new Bounty(owner.getName(), owner.getDisplayName(), targetName, target.getDisplayName(), award, postingFee, contractFee, deathPenalty, duration);
 
                                 int delay = plugin.getBountyManager().getContractDelay();
 
-                                plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, bounty, delay * 20);
+                                plugin.getBountyManager().getInactiveBounties().add(bounty);
+                                this.plugin.saveData();
+
+                                bounty.delayActivation(plugin);
 
                                 boolean feeCharged = econ.subtract(ownerName, value, false) != Double.NaN;
 

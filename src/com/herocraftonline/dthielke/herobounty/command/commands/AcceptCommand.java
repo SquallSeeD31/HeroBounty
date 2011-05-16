@@ -18,7 +18,7 @@ public class AcceptCommand extends BaseCommand {
         super(plugin);
         name = "Accept";
         description = "Accepts a posted bounty for a small contract fee";
-        usage = "§e/bounty accept §9<id#> <deferFee>";
+        usage = "§e/bounty accept §9<id#> [deferFee]";
         minArgs = 1;
         maxArgs = 2;
         identifiers.add("bounty accept");
@@ -31,8 +31,19 @@ public class AcceptCommand extends BaseCommand {
             String hunterName = hunter.getName();
             List<Bounty> bounties = plugin.getBountyManager().getBounties();
             int id = BountyManager.parseBountyId(args[0], bounties);
+
+            plugin.getBountyManager().checkBountyExpiration();
+
             if (id != -1) {
                 Bounty bounty = bounties.get(id);
+
+                // Stops when this bounty has expired (following the check)
+                if(!plugin.getBountyManager().getBounties().contains(bounty)) {
+                    Messaging.send(plugin, hunter, "This bounty has expired.");
+
+                    return;
+                }
+
                 if (!bounty.getOwner().equals(hunterName) || 1==1) {
                     if (!bounty.getTarget().equals(hunterName) || 1==1) {
                         if (!bounty.isHunter(hunterName)) {
@@ -41,7 +52,7 @@ public class AcceptCommand extends BaseCommand {
                                 double contractFee = bounty.getContractFee();
 
                                 // Defer fee payment
-                                if(args.length > 1 && args[1] != null) {
+                                if(args.length > 1 && args[1].equals("deferFee")) {
                                     contractFee *= plugin.getBountyManager().getContractDeferFee();
                                     bounty.setHunterDeferFee(hunterName, plugin.getBountyManager().getContractDeferFee());
                                 }
