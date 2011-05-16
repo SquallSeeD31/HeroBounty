@@ -44,8 +44,8 @@ public class AcceptCommand extends BaseCommand {
                     return;
                 }
 
-                if (!bounty.getOwner().equals(hunterName) || 1==1) {
-                    if (!bounty.getTarget().equals(hunterName) || 1==1) {
+                if (!bounty.getOwner().equals(hunterName)) {
+                    if (!bounty.getTarget().equals(hunterName)) {
                         if (!bounty.isHunter(hunterName)) {
                             if (plugin.getPermissions().canAcceptBounty(hunter)) {
                                 Economy econ = plugin.getEconomy();

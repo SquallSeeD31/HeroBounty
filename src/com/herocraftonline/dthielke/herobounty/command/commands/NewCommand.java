@@ -31,9 +31,9 @@ public class NewCommand extends BaseCommand {
             Player target = plugin.getServer().getPlayer(args[0]);
             if (target != null) {
                 String targetName = target.getName();
-                if (target != owner || 1 == 1) {
+                if (target != owner) {
                     if (plugin.getPermissions().canCreateBounty(owner)) {
-                        if (plugin.getPermissions().canBeTargetted(target) || 1 == 1) {
+                        if (plugin.getPermissions().canBeTargetted(target)) {
                             List<Bounty> bounties = plugin.getBountyManager().getBounties();
                             for (Bounty b : bounties) {
                                 if (b.getTarget().equalsIgnoreCase(targetName)) {
