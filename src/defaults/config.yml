@@ -8,11 +8,20 @@ bounty-fee-percent: 10
 #percent of the award value hunters must pay to accept a contract
 contract-fee-percent: 5
 
+#percent of the contract fee a hunter has to pay early if he decides to use the defer option
+contract-defer-fee-percent: 10
+
 #percent of the award value that the killed target loses
 death-penalty-percent: 5
 
-#the amount of time bounty hunters have to complete a bounty (in minutes)
-bounty-duration: 1440
+#the amount of time until a contract expires (in minutes)
+contract-duration: 4320
+
+#the amount of time by which the contract duration is reduced when a hunter gets killed by the target (in minutes)
+contract-hunterkill-reduction: 1440
+
+#the amount of time until a contract is active after creation (in seconds)
+contract-save-delay: 300
 
 #if true, hides the target names until a bounty is accepted
 anonymous-targets: false

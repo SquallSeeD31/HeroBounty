@@ -1,6 +1,6 @@
 /**
  * Copyright (C) 2011 DThielke <dave.thielke@gmail.com>
- * 
+ *
  * This work is licensed under the Creative Commons Attribution-NonCommercial-NoDerivs 3.0 Unported License.
  * To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-nd/3.0/ or send a letter to
  * Creative Commons, 171 Second Street, Suite 300, San Francisco, California, 94105, USA.
@@ -10,26 +10,36 @@ package com.herocraftonline.dthielke.herobounty;
 
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
-public class Bounty implements Comparable<Bounty> {
+import java.util.Collections;
+import java.util.GregorianCalendar;
+import java.util.TimerTask;
+
+import com.herocraftonline.dthielke.herobounty.util.Messaging;
+
+public class Bounty extends TimerTask implements Comparable<Bounty> {
+    private HeroBounty plugin;
     private String owner = "";
     private String target = "";
     private String ownerDisplayName = "";
     private String targetDisplayName = "";
     private List<String> hunters = new ArrayList<String>();
-    private HashMap<String, Date> expirations = new HashMap<String, Date>();
+    private HashMap<String, Double> hunterDeferFees = new HashMap<String, Double>();
     private Point2D targetLocation = new Point2D.Double();
     private int value = 0;
     private int postingFee = 0;
     private int deathPenalty = 0;
     private int contractFee = 0;
+    private int duration = 0;
+    private Date expiration = null;
 
-    public Bounty() {}
+    public Bounty(){}
 
-    public Bounty(String owner, String ownerDisplayName, String target, String targetDisplayName, int value, int postingFee, int contractFee, int deathPenalty) {
+    public Bounty(String owner, String ownerDisplayName, String target, String targetDisplayName, int value, int postingFee, int contractFee, int deathPenalty, int duration) {
         this.owner = owner;
         this.ownerDisplayName = ownerDisplayName;
         this.target = target;
@@ -38,6 +48,17 @@ public class Bounty implements Comparable<Bounty> {
         this.setPostingFee(postingFee);
         this.contractFee = contractFee;
         this.deathPenalty = deathPenalty;
+        this.duration = duration;
+    }
+
+    public void delayActivation(HeroBounty plugin) {
+        this.plugin = plugin;
+
+        plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, this, plugin.getBountyManager().getContractDelay() * 20);
+    }
+
+    public boolean isActive() {
+        return this.getExpiration() != null;
     }
 
     public void addHunter(String name) {
@@ -64,28 +85,50 @@ public class Bounty implements Comparable<Bounty> {
         return deathPenalty;
     }
 
-    public Date getExpiration(String hunter) {
-        return expirations.get(hunter);
-    }
-
-    public HashMap<String, Date> getExpirations() {
-        return expirations;
-    }
-
     public List<String> getHunters() {
         return hunters;
     }
 
-    public long getMillisecondsLeft(String hunter) {
+    public long getMillisecondsLeft() {
         Date now = new Date();
 
-        long diff = expirations.get(hunter).getTime() - now.getTime();
+        long diff = expiration.getTime() - now.getTime();
 
         return diff;
     }
 
-    public int getMinutesLeft(String hunter) {
-        return (int) Math.ceil(getMillisecondsLeft(hunter) / (1000 * 60));
+    public int getMinutesLeft() {
+        return (int) Math.ceil(getMillisecondsLeft() / (1000 * 60));
+    }
+
+    public int getDuration() {
+        return this.duration;
+    }
+
+    public void setDuration(int duration) {
+        this.duration = duration;
+    }
+
+    public Date getExpiration() {
+        return this.expiration;
+    }
+
+    public void setExpiration(Date expiration) {
+        this.expiration = expiration;
+    }
+
+    public boolean decreaseExpiration(int minutes) {
+        GregorianCalendar exp = new GregorianCalendar();
+        exp.setTime(expiration);
+        exp.add(Calendar.MINUTE, -1 * minutes);
+
+        this.setExpiration(exp.getTime());
+
+        if(this.getMillisecondsLeft() <= 0) {
+            return false;
+        }
+
+        return true;
     }
 
     public String getOwner() {
@@ -120,8 +163,31 @@ public class Bounty implements Comparable<Bounty> {
     }
 
     public void removeHunter(String name) {
+        if(this.hunterDeferFees.containsKey(name)) {
+            this.hunterDeferFees.remove(name);
+        }
+
         hunters.remove(name);
-        expirations.remove(name);
+    }
+
+    public HashMap<String, Double> getHunterDeferFees() {
+        return this.hunterDeferFees;
+    }
+
+    public double getHunterDeferFee(String name) {
+        if(this.isHunter(name)) {
+            if(this.hunterDeferFees.containsKey(name)) {
+                return this.hunterDeferFees.get(name);
+            }
+        }
+
+        return Double.NaN;
+    }
+
+    public void setHunterDeferFee(String name, double deferFee) {
+        if(this.isHunter(name)) {
+            this.hunterDeferFees.put(name, deferFee);
+        }
     }
 
     public void setContractFee(int contractFee) {
@@ -130,10 +196,6 @@ public class Bounty implements Comparable<Bounty> {
 
     public void setDeathPenalty(int deathPenalty) {
         this.deathPenalty = deathPenalty;
-    }
-
-    public void setExpirations(HashMap<String, Date> expirations) {
-        this.expirations = expirations;
     }
 
     public void setHunters(List<String> hunters) {
@@ -170,5 +232,20 @@ public class Bounty implements Comparable<Bounty> {
 
     public Point2D getTargetLocation() {
         return targetLocation;
+    }
+
+    @Override
+    public void run() {
+        GregorianCalendar expiration = new GregorianCalendar();
+        expiration.add(Calendar.MINUTE, this.duration);
+        this.expiration = expiration.getTime();
+
+        this.plugin.getBountyManager().getInactiveBounties().remove(this);
+        this.plugin.getBountyManager().getBounties().add(this);
+        Collections.sort(this.plugin.getBountyManager().getBounties());
+
+        Messaging.broadcast(this.plugin, "A new bounty has been placed for $1.", this.plugin.getEconomy().format(this.value));
+
+        this.plugin.saveData();
     }
 }

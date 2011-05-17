@@ -32,17 +32,36 @@ public class CancelCommand extends BaseCommand {
             String ownerName = owner.getName();
             List<Bounty> bounties = plugin.getBountyManager().getBounties();
             int id = BountyManager.parseBountyId(args[0], bounties);
+
+            plugin.getBountyManager().checkBountyExpiration();
+
             if (id != -1) {
                 Bounty bounty = bounties.get(id);
+
+                // Stops when this bounty has expired (following the check)
+                if(!plugin.getBountyManager().getBounties().contains(bounty)) {
+                    Messaging.send(plugin, owner, "This bounty has expired.");
+
+                    return;
+                }
+
                 int value = bounty.getValue();
                 if (bounty.getOwner().equals(ownerName)) {
+                    double timeRemaining = bounty.getMillisecondsLeft();
+                    double expiration = bounty.getDuration() * 60 * 1000;
+
                     bounties.remove(bounty);
                     Collections.sort(bounties);
 
                     Economy econ = plugin.getEconomy();
-                    boolean reimbursed = econ.add(ownerName, value) != Double.NaN;
+                    double refund = (timeRemaining / expiration) * value;
+
+                    // Prevent negative
+                    if(refund < 0) refund = 0;
+
+                    boolean reimbursed = econ.add(ownerName, refund) != Double.NaN;
                     if (reimbursed) {
-                        Messaging.send(plugin, owner, "You have been reimbursed $1 for your bounty.", econ.format(value));
+                        Messaging.send(plugin, owner, "You have been reimbursed $1 for your bounty.", econ.format(refund));
                     } else {
                         Messaging.send(plugin, owner, "You have cancelled your bounty on $1.", bounty.getTargetDisplayName());
                     }
@@ -51,10 +70,17 @@ public class CancelCommand extends BaseCommand {
                     if (!hunters.isEmpty()) {
                         int inconvenience = (int) Math.floor((double) bounty.getPostingFee() / hunters.size());
                         for (String hunterName : bounty.getHunters()) {
-                            reimbursed = econ.add(hunterName, bounty.getContractFee()) != Double.NaN;
+                            double contractFee = bounty.getContractFee();
+                            if(bounty.getHunterDeferFee(hunterName) != Double.NaN) {
+                                contractFee *= bounty.getHunterDeferFee(hunterName);
+                            }
+
+                            reimbursed = econ.add(hunterName, contractFee) != Double.NaN;
+
                             if (plugin.getBountyManager().shouldPayInconvenience()) {
                                 econ.add(hunterName, inconvenience);
                             }
+
 
                             Player hunter = plugin.getServer().getPlayer(hunterName);
                             if (hunter != null) {

@@ -1,6 +1,5 @@
 package com.herocraftonline.dthielke.herobounty.command.commands;
 
-import java.util.Collections;
 import java.util.List;
 
 import org.bukkit.command.CommandSender;
@@ -59,19 +58,27 @@ public class NewCommand extends BaseCommand {
                                 int award = value - postingFee;
                                 int contractFee = (int) (plugin.getBountyManager().getContractFee() * award);
                                 int deathPenalty = (int) (plugin.getBountyManager().getDeathFee() * award);
+                                int duration = this.plugin.getBountyManager().getDuration();
 
-                                Bounty bounty = new Bounty(owner.getName(), owner.getDisplayName(), targetName, target.getDisplayName(), award, postingFee, contractFee, deathPenalty);
-                                bounties.add(bounty);
-                                Collections.sort(bounties);
+                                Bounty bounty = new Bounty(owner.getName(), owner.getDisplayName(), targetName, target.getDisplayName(), award, postingFee, contractFee, deathPenalty, duration);
+
+                                int delay = plugin.getBountyManager().getContractDelay();
+
+                                plugin.getBountyManager().getInactiveBounties().add(bounty);
+                                this.plugin.saveData();
+
+                                bounty.delayActivation(plugin);
 
                                 boolean feeCharged = econ.subtract(ownerName, value, false) != Double.NaN;
-                                Messaging.send(plugin, owner, "Placed a bounty on $1's head for $2.", targetName, econ.format(award));
+
+                                int delayRelativeTime = (delay < 60) ? delay : (delay < 60 * 60) ? delay / 60 : (delay < (60 * 60 * 24)) ? delay / (60 * 60) : (delay < (60 * 60 * 24 * 7)) ? delay / (60 * 60 * 24) : delay / (60 * 60 * 24 * 7);
+                                String delayRelativeAmount = (delay < 60) ? " seconds" : (delay < 60 * 60) ? " minutes" : (delay < (60 * 60 * 24)) ? " hours" : (delay < (60 * 60 * 24 * 7)) ? " days" : " weeks";
+                                if(delayRelativeTime == 1) delayRelativeAmount = delayRelativeAmount.substring(0, delayRelativeAmount.length() - 1);
+
+                                Messaging.send(plugin, owner, "A new bounty will be placed on $1's head for $2 in $3$4.", targetName, econ.format(award), Integer.toString(delayRelativeTime), delayRelativeAmount);
                                 if (feeCharged) {
                                     Messaging.send(plugin, owner, "You have been charged $1 for posting this bounty.", econ.format(postingFee));
                                 }
-                                Messaging.broadcast(plugin, "A new bounty has been placed for $1.", econ.format(award));
-
-                                plugin.saveData();
                             } else {
                                 Messaging.send(plugin, owner, "You don't have enough funds to do that.");
                             }

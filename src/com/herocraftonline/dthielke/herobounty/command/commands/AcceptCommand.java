@@ -1,7 +1,5 @@
 package com.herocraftonline.dthielke.herobounty.command.commands;
 
-import java.util.Calendar;
-import java.util.GregorianCalendar;
 import java.util.List;
 
 import org.bukkit.command.CommandSender;
@@ -20,9 +18,9 @@ public class AcceptCommand extends BaseCommand {
         super(plugin);
         name = "Accept";
         description = "Accepts a posted bounty for a small contract fee";
-        usage = "§e/bounty accept §9<id#>";
+        usage = "§e/bounty accept §9<id#> [deferFee]";
         minArgs = 1;
-        maxArgs = 1;
+        maxArgs = 2;
         identifiers.add("bounty accept");
     }
 
@@ -33,22 +31,38 @@ public class AcceptCommand extends BaseCommand {
             String hunterName = hunter.getName();
             List<Bounty> bounties = plugin.getBountyManager().getBounties();
             int id = BountyManager.parseBountyId(args[0], bounties);
+
+            plugin.getBountyManager().checkBountyExpiration();
+
             if (id != -1) {
                 Bounty bounty = bounties.get(id);
+
+                // Stops when this bounty has expired (following the check)
+                if(!plugin.getBountyManager().getBounties().contains(bounty)) {
+                    Messaging.send(plugin, hunter, "This bounty has expired.");
+
+                    return;
+                }
+
                 if (!bounty.getOwner().equals(hunterName)) {
                     if (!bounty.getTarget().equals(hunterName)) {
                         if (!bounty.isHunter(hunterName)) {
                             if (plugin.getPermissions().canAcceptBounty(hunter)) {
                                 Economy econ = plugin.getEconomy();
-                                int contractFee = bounty.getContractFee();
+                                double contractFee = bounty.getContractFee();
+
+                                // Defer fee payment
+                                if(args.length > 1 && args[1].equals("deferFee")) {
+                                    contractFee *= plugin.getBountyManager().getContractDeferFee();
+                                    bounty.setHunterDeferFee(hunterName, plugin.getBountyManager().getContractDeferFee());
+                                }
+
                                 if (econ.hasAmount(hunterName, contractFee)) {
                                     bounty.addHunter(hunterName);
+
                                     boolean feeCharged = econ.subtract(hunterName, contractFee, false) != Double.NaN;
 
-                                    GregorianCalendar expiration = new GregorianCalendar();
                                     int bountyDuration = plugin.getBountyManager().getDuration();
-                                    expiration.add(Calendar.MINUTE, bountyDuration);
-                                    bounty.getExpirations().put(hunterName, expiration.getTime());
 
                                     int bountyRelativeTime = (bountyDuration < 60) ? bountyDuration : (bountyDuration < (60 * 24)) ? bountyDuration / 60 : (bountyDuration < (60 * 24 * 7)) ? bountyDuration / (60 * 24) : bountyDuration / (60 * 24 * 7);
                                     String bountyRelativeAmount = (bountyDuration < 60) ? " minutes" : (bountyDuration < (60 * 24)) ? " hours" : (bountyDuration < (60 * 24 * 7)) ? " days" : " weeks";
