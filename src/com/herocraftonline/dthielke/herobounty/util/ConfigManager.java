@@ -37,7 +37,7 @@ public class ConfigManager {
         bountyManager.setMinimumValue(config.getInt("bounty-min", 20));
         bountyManager.setPlacementFee(config.getInt("bounty-fee-percent", 10) / 100f);
         bountyManager.setContractFee(config.getInt("contract-fee-percent", 5) / 100f);
-        bountyManager.setContractDeferFee(config.getInt("contract--defer-fee-percent", 10) / 100f);
+        bountyManager.setContractDeferFee(config.getInt("contract-defer-fee-percent", 10) / 100f);
         bountyManager.setDeathFee(config.getInt("death-penalty-percent", 5) / 100f);
         bountyManager.setDuration(config.getInt("contract-duration", 72 * 60));
         bountyManager.setDurationReduction(config.getInt("contract-hunterkill-reduction", 24 * 60));

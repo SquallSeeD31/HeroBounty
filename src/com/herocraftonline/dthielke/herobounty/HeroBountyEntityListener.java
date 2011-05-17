@@ -86,9 +86,10 @@ public class HeroBountyEntityListener extends EntityListener {
                 plugin.getBountyManager().checkBountyExpiration();
                 if(!plugin.getBountyManager().getBounties().contains(b)) return;
 
+                double contractFee = 0;
                 if(b.getHunterDeferFee(defenderName) != Double.NaN) {
                     Economy econ = plugin.getEconomy();
-                    double contractFee = b.getContractFee() * (1 - b.getHunterDeferFee(defenderName));
+                    contractFee = b.getContractFee() * (1 - b.getHunterDeferFee(defenderName));
                     econ.subtract(defenderName, contractFee, true);
                 }
 
@@ -101,10 +102,10 @@ public class HeroBountyEntityListener extends EntityListener {
                     String durationReductionRelativeAmount = (durationReduction < 60) ? " minutes" : (durationReduction < (60 * 24)) ? " hours" : (durationReduction < (60 * 24 * 7)) ? " days" : " weeks";
                     if(durationReductionRelativeTime == 1) durationReductionRelativeAmount = durationReductionRelativeAmount.substring(0, durationReductionRelativeAmount.length() - 1);
 
-                    Messaging.send(plugin, defender, "The expiration time for your bounty on $1 has beend reduced by $2$3.", b.getTargetDisplayName(), Integer.toString(durationReductionRelativeTime), durationReductionRelativeAmount);
+                    Messaging.send(plugin, defender, "Your bounty on $1 has been canceled by your death, you have lost $2c", b.getTargetDisplayName(), Double.toString(contractFee));
 
                     if(plugin.getServer().getPlayer(b.getOwner()) != null) {
-                        Messaging.send(plugin, plugin.getServer().getPlayer(b.getOwner()), "The expiration time for your bounty on $1 has beend reduced by $2$3.", b.getTargetDisplayName(), Integer.toString(durationReductionRelativeTime), durationReductionRelativeAmount);
+                        Messaging.send(plugin, plugin.getServer().getPlayer(b.getOwner()), "The expiration time for your bounty on $1 has been reduced by $2$3.", b.getTargetDisplayName(), Integer.toString(durationReductionRelativeTime), durationReductionRelativeAmount);
                     }
                 }
 
