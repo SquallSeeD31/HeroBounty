@@ -67,9 +67,17 @@ public class ListCommand extends BaseCommand {
                         	msg += b.getTarget() + "\u00A7f - \u00A7e";
                         }
                         msg += iConomy.format(b.getValue()) + "\u00A7f - \u00A7eFee: " + iConomy.format(b.getContractFee());
+
+                        // Appending the time left
+                        int expiration = b.getMinutesLeft();
+                        int expirationRelativeTime = (expiration < 60) ? expiration : (expiration < (60 * 24)) ? expiration / 60 : (expiration < (60 * 24 * 7)) ? expiration / (60 * 24) : expiration / (60 * 24 * 7);
+                        String expirationRelativeAmount = (expiration < 60) ? "m" : (expiration < (60 * 24)) ? "h" : (expiration < (60 * 24 * 7)) ? "d" : "w";
+                        msg += "\u00A7f - \u00A7e" + expirationRelativeTime + expirationRelativeAmount + " left";
+
                         if (senderName.equalsIgnoreCase(b.getOwner())) {
                             msg += "\u00A77 (posted by you)";
                         }
+
                         sender.sendMessage(msg);
                     }
                 }

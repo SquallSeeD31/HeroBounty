@@ -1,6 +1,6 @@
 /**
  * Copyright (C) 2011 DThielke <dave.thielke@gmail.com>
- * 
+ *
  * This work is licensed under the Creative Commons Attribution-NonCommercial-NoDerivs 3.0 Unported License.
  * To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-nd/3.0/ or send a letter to
  * Creative Commons, 171 Second Street, Suite 300, San Francisco, California, 94105, USA.
@@ -11,6 +11,8 @@ package com.herocraftonline.dthielke.herobounty;
 import java.io.File;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.List;
+import java.util.ArrayList;
 
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -39,8 +41,9 @@ import com.nijiko.permissions.PermissionHandler;
 import com.nijikokun.bukkit.Permissions.Permissions;
 
 public class HeroBounty extends JavaPlugin {
-    
+
     private HeroBountyEntityListener entityListener;
+    private HeroBountyPlayerListener playerListener;
     private HeroBountyServerListener serverListener;
     private CommandManager commandManager;
     private PermissionWrapper permissions;
@@ -61,7 +64,7 @@ public class HeroBounty extends JavaPlugin {
     public Economy getEconomy() {
         return economy;
     }
-    
+
     public PermissionWrapper getPermissions() {
         return permissions;
     }
@@ -77,7 +80,6 @@ public class HeroBounty extends JavaPlugin {
             if (plugin.isEnabled()) {
                 iConomy iconomy = (iConomy) plugin;
                 economy.setIconomy(iconomy);
-                bountyManager.startExpirationTimer();
                 log(Level.INFO, "iConomy " + iconomy.getDescription().getVersion() + " found.");
             }
         }
@@ -124,8 +126,10 @@ public class HeroBounty extends JavaPlugin {
         configManager.load();
         loadPermissions();
         loadIConomy();
+
+        this.getBountyManager().redelayInactiveBounties();
     }
-    
+
     public void onLoad() {
         bountyManager = new BountyManager(this);
         configManager = new ConfigManager(this);
@@ -133,7 +137,12 @@ public class HeroBounty extends JavaPlugin {
 
     public void saveData() {
         File file = new File(getDataFolder(), "data.yml");
-        BountyFileHandler.save(bountyManager.getBounties(), file);
+        List<Bounty> bounties = new ArrayList<Bounty>();
+
+        bounties.addAll(bountyManager.getBounties());
+        bounties.addAll(bountyManager.getInactiveBounties());
+
+        BountyFileHandler.save(bounties, file);
     }
 
     public void setTag(String tag) {
@@ -154,11 +163,13 @@ public class HeroBounty extends JavaPlugin {
 
     private void registerEvents() {
         entityListener = new HeroBountyEntityListener(this);
+        playerListener = new HeroBountyPlayerListener(this);
         serverListener = new HeroBountyServerListener(this);
         PluginManager pluginManager = getServer().getPluginManager();
         pluginManager.registerEvent(Type.ENTITY_DEATH, entityListener, Priority.Normal, this);
         pluginManager.registerEvent(Type.ENTITY_DAMAGE, entityListener, Priority.Normal, this);
+        pluginManager.registerEvent(Type.PLAYER_JOIN, playerListener, Priority.Normal, this);
         pluginManager.registerEvent(Type.PLUGIN_ENABLE, serverListener, Priority.Monitor, this);
     }
-    
+
 }

@@ -38,9 +38,10 @@ public class ViewCommand extends BaseCommand {
                 hunter.sendMessage("§cAccepted Bounties:");
                 for (int i = 0; i < acceptedBounties.size(); i++) {
                     Bounty bounty = acceptedBounties.get(i);
-                    int bountyDuration = bounty.getMinutesLeft(hunterName);
+                    int bountyDuration = bounty.getMinutesLeft();
                     int bountyRelativeTime = (bountyDuration < 60) ? bountyDuration : (bountyDuration < (60 * 24)) ? bountyDuration / 60 : (bountyDuration < (60 * 24 * 7)) ? bountyDuration / (60 * 24) : bountyDuration / (60 * 24 * 7);
                     String bountyRelativeAmount = (bountyDuration < 60) ? " minutes" : (bountyDuration < (60 * 24)) ? " hours" : (bountyDuration < (60 * 24 * 7)) ? " days" : " weeks";
+                    if(bountyRelativeTime == 1) bountyRelativeAmount = bountyRelativeAmount.substring(0, bountyRelativeAmount.length() - 1);
                     hunter.sendMessage("§f" + (i + 1) + ". §e" + bounty.getTarget() + " - " + econ.format(bounty.getValue()) + " - " + bountyRelativeTime + bountyRelativeAmount);
                 }
             }
