@@ -10,7 +10,7 @@ public class HeroBountyPlayerListener extends PlayerListener {
     public static HeroBounty plugin;
 
     public HeroBountyPlayerListener(HeroBounty plugin) {
-        HeroBountyEntityListener.plugin = plugin;
+        HeroBountyPlayerListener.plugin = plugin;
     }
 
     /**
