@@ -29,21 +29,22 @@ public class AcceptCommand extends BaseCommand {
         if (sender instanceof Player) {
             Player hunter = (Player) sender;
             String hunterName = hunter.getName();
+
             List<Bounty> bounties = plugin.getBountyManager().getBounties();
             int id = BountyManager.parseBountyId(args[0], bounties);
-
-            plugin.getBountyManager().checkBountyExpiration();
+            Bounty bounty = null;
 
             if (id != -1) {
-                Bounty bounty = bounties.get(id);
+                bounty = bounties.get(id);
+            }
 
-                // Stops when this bounty has expired (following the check)
-                if(!plugin.getBountyManager().getBounties().contains(bounty)) {
-                    Messaging.send(plugin, hunter, "This bounty has expired.");
+            if (plugin.getBountyManager().checkBountyExpiration(id)) {
+                Messaging.send(plugin, hunter, "This bounty has expired.");
 
-                    return;
-                }
+                return;
+            }
 
+            if (bounty != null) {
                 if (!bounty.getOwner().equals(hunterName)) {
                     if (!bounty.getTarget().equals(hunterName)) {
                         if (!bounty.isHunter(hunterName)) {
