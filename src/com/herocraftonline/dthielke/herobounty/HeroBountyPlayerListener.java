@@ -20,7 +20,7 @@ public class HeroBountyPlayerListener extends PlayerListener {
     @Override
     public void onPlayerJoin(PlayerJoinEvent event) {
         if(!plugin.getBountyManager().listBountiesAcceptedBy(event.getPlayer().getName()).isEmpty() || plugin.getBountyManager().isTarget(event.getPlayer())) {
-            plugin.getBountyManager().checkBountyExpiration();
+            plugin.getBountyManager().checkBountyExpiration(0);
         }
     }
 }

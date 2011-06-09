@@ -68,7 +68,11 @@ public class BountyManager {
         return true;
     }
 
-    public void checkBountyExpiration() {
+    public boolean checkBountyExpiration(int bountyId) {
+        // This variable checks if the passed bountyid gets removed
+        boolean removed = false;
+        List<Bounty> removals = new ArrayList<Bounty>();
+
         for(int i = 0; i < this.getBounties().size(); i++) {
             Bounty bounty = this.getBounties().get(i);
 
@@ -85,11 +89,20 @@ public class BountyManager {
                     Messaging.send(plugin, owner, "Your bounty on $1 has expired.", bounty.getTargetDisplayName());
                 }
 
-                bounties.remove(i);
-                Collections.sort(bounties);
-                plugin.saveData();
+                removals.add(bounty);
+
+                if(bountyId == i) {
+                    removed = true;
+                }
             }
         }
+
+        if(bounties.removeAll(removals)) {
+            Collections.sort(bounties);
+            plugin.saveData();
+        }
+
+        return removed;
     }
 
     public boolean isTarget(Player player) {

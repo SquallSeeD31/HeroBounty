@@ -75,7 +75,7 @@ public class HeroBountyEntityListener extends EntityListener {
             Bounty b = bounties.get(i);
 
             if (b.getTarget().equalsIgnoreCase(defenderName) && b.isHunter(attackerName)) {
-                plugin.getBountyManager().checkBountyExpiration();
+                plugin.getBountyManager().checkBountyExpiration(0);
                 if(!plugin.getBountyManager().getBounties().contains(b)) return;
 
                 plugin.getBountyManager().completeBounty(i, attackerName);
@@ -83,7 +83,7 @@ public class HeroBountyEntityListener extends EntityListener {
 
                 return;
             } else if (b.getTarget().equalsIgnoreCase(attackerName) && b.isHunter(defenderName)) {
-                plugin.getBountyManager().checkBountyExpiration();
+                plugin.getBountyManager().checkBountyExpiration(0);
                 if(!plugin.getBountyManager().getBounties().contains(b)) return;
 
                 double contractFee = 0;
