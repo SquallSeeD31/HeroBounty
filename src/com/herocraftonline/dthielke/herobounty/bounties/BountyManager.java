@@ -1,10 +1,10 @@
 package com.herocraftonline.dthielke.herobounty.bounties;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.ArrayList;
-import java.util.TimerTask;
+import java.util.Collections;
+import java.util.Map;
+import java.util.WeakHashMap;
 
 import org.bukkit.entity.Player;
 
@@ -30,9 +30,31 @@ public class BountyManager {
     private int durationReduction;
     private int contractDelay;
     private int locationRounding;
+    private int targetInformationCooldown;
+
+    private Map<Player, Map<Player, Long>> lastInformationMap = new WeakHashMap<Player, Map<Player, Long>>();
 
     public BountyManager(HeroBounty plugin) {
         this.plugin = plugin;
+    }
+
+    public void informTarget(Player hunter, Player target, String message, String ... params) {
+        Map<Player, Long> targetMap = lastInformationMap.get(hunter);
+
+        if(targetMap != null) {
+            Long lastInformation = targetMap.get(target);
+
+            if(lastInformation != null && lastInformation < System.currentTimeMillis() + this.targetInformationCooldown * 1000) {
+                return;
+            }
+        } else {
+            targetMap = new WeakHashMap<Player, Long>();
+            lastInformationMap.put(hunter, targetMap);
+        }
+
+        Messaging.send(plugin, target, message, params);
+
+        targetMap.put(target, System.currentTimeMillis());
     }
 
     public boolean completeBounty(int id, String hunterName) {
@@ -258,5 +280,13 @@ public class BountyManager {
 
     public void setLocationRounding(int locationRounding) {
         this.locationRounding = locationRounding;
+    }
+
+    public int getTargetInformationCooldown() {
+        return targetInformationCooldown;
+    }
+
+    public void setTargetInformationCooldown(int targetInformationCooldown) {
+        this.targetInformationCooldown = targetInformationCooldown;
     }
 }
