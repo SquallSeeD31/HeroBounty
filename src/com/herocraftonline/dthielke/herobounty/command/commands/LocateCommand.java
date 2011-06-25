@@ -13,7 +13,6 @@ import com.herocraftonline.dthielke.herobounty.command.BaseCommand;
 import com.herocraftonline.dthielke.herobounty.util.Messaging;
 
 public class LocateCommand extends BaseCommand {
-
     public LocateCommand(HeroBounty plugin) {
         super(plugin);
         name = "Locate";
@@ -43,10 +42,10 @@ public class LocateCommand extends BaseCommand {
                         if (target != null) {
                             Location loc = roundLocation(target.getLocation(), locationRounding);
                             hunter.setCompassTarget(loc);
-                            Messaging.send(plugin, hunter, "Compass now points near $1.", target.getDisplayName());
+                            Messaging.send(plugin, hunter, "Compass now points near $1 at approximate $2(X: $3, Z: $4).", target.getDisplayName(), loc.getWorld().getName(), Integer.toString(loc.getBlockX()), Integer.toString(loc.getBlockZ()));
 
                             Location hunterLoc = hunter.getLocation();
-                            Messaging.send(plugin, target, "You are being targeted by $1 at X: $2, Z: $3.", hunter.getDisplayName(), Integer.toString(hunterLoc.getBlockX()), Integer.toString(hunterLoc.getBlockZ()));
+                            plugin.getBountyManager().informTarget(hunter, target, "You are being targeted by $1 at $2(X: $3, Z: $4).", hunter.getDisplayName(), hunterLoc.getWorld().getName(), Integer.toString(hunterLoc.getBlockX()), Integer.toString(hunterLoc.getBlockZ()));
                         } else {
                             Messaging.send(plugin, hunter, "Target is offline.");
                         }
@@ -62,7 +61,10 @@ public class LocateCommand extends BaseCommand {
                             hunter.sendMessage("§f" + (i + 1) + ". §e" + b.getTarget() + ": offline");
                         } else {
                             Location loc = roundLocation(target.getLocation(), locationRounding);
-                            hunter.sendMessage("§f" + (i + 1) + ". §e" + b.getTarget() + ": (" + loc.getBlockX() + ", " + loc.getBlockZ() + ")");
+                            hunter.sendMessage("§f" + (i + 1) + ". §e" + b.getTarget() + ": " + loc.getWorld().getName() + "(X: " + loc.getBlockX() + ", Y: " + loc.getBlockZ() + ")");
+
+                            Location hunterLoc = hunter.getLocation();
+                            plugin.getBountyManager().informTarget(hunter, target, "You are being targeted by $1 at $2(X: $3, Z: $4).", hunter.getDisplayName(), hunterLoc.getWorld().getName(), Integer.toString(hunterLoc.getBlockX()), Integer.toString(hunterLoc.getBlockZ()));
                         }
                     }
                 }
@@ -79,5 +81,4 @@ public class LocateCommand extends BaseCommand {
         z = (int) (Math.round(z / (float) roundTo) * roundTo);
         return new Location(loc.getWorld(), x, 0, z);
     }
-
 }
