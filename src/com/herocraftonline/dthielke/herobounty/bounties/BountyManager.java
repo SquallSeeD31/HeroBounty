@@ -44,7 +44,7 @@ public class BountyManager {
         if(targetMap != null) {
             Long lastInformation = targetMap.get(target);
 
-            if(lastInformation != null && lastInformation < System.currentTimeMillis() + this.targetInformationCooldown * 1000) {
+            if(lastInformation != null && lastInformation > System.currentTimeMillis() - this.targetInformationCooldown * 1000) {
                 return;
             }
         } else {
