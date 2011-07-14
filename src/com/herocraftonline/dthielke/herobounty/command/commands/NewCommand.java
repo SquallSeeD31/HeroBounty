@@ -35,6 +35,7 @@ public class NewCommand extends BaseCommand {
                     if (plugin.getPermissions().canCreateBounty(owner)) {
                         if (plugin.getPermissions().canBeTargetted(target)) {
                             List<Bounty> bounties = plugin.getBountyManager().getBounties();
+                            bounties.addAll(plugin.getBountyManager().getInactiveBounties());
                             for (Bounty b : bounties) {
                                 if (b.getTarget().equalsIgnoreCase(targetName)) {
                                     Messaging.send(plugin, owner, "There is already a bounty on $1.", targetName);
