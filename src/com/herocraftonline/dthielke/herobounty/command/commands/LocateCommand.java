@@ -42,10 +42,10 @@ public class LocateCommand extends BaseCommand {
                         if (target != null) {
                             Location loc = roundLocation(target.getLocation(), locationRounding);
                             hunter.setCompassTarget(loc);
-                            Messaging.send(plugin, hunter, "Compass now points near $1 at approximate $2(X: $3, Z: $4).", target.getDisplayName(), loc.getWorld().getName(), Integer.toString(loc.getBlockX()), Integer.toString(loc.getBlockZ()));
+                            Messaging.send(plugin, hunter, "Compass now points near $1 at approximate $2 (X: $3, Z: $4).", target.getDisplayName(), loc.getWorld().getName(), Integer.toString(loc.getBlockX()), Integer.toString(loc.getBlockZ()));
 
                             Location hunterLoc = hunter.getLocation();
-                            plugin.getBountyManager().informTarget(hunter, target, "You are being targeted by $1 at $2(X: $3, Z: $4).", hunter.getDisplayName(), hunterLoc.getWorld().getName(), Integer.toString(hunterLoc.getBlockX()), Integer.toString(hunterLoc.getBlockZ()));
+                            plugin.getBountyManager().informTarget(hunter, target, "You are being targeted by $1 at $2 (X: $3, Z: $4).", hunter.getDisplayName(), hunterLoc.getWorld().getName(), Integer.toString(hunterLoc.getBlockX()), Integer.toString(hunterLoc.getBlockZ()));
                         } else {
                             Messaging.send(plugin, hunter, "Target is offline.");
                         }
@@ -53,7 +53,7 @@ public class LocateCommand extends BaseCommand {
                         Messaging.send(plugin, hunter, "Invalid bounty id#.");
                     }
                 } else {
-                    hunter.sendMessage("§cLast Known Target Locations: (x, z)");
+                    hunter.sendMessage("§cLast Known Target Locations: World (X, Z)");
                     for (int i = 0; i < acceptedBounties.size(); i++) {
                         Bounty b = acceptedBounties.get(i);
                         Player target = plugin.getServer().getPlayer(b.getTarget());
@@ -61,10 +61,10 @@ public class LocateCommand extends BaseCommand {
                             hunter.sendMessage("§f" + (i + 1) + ". §e" + b.getTarget() + ": offline");
                         } else {
                             Location loc = roundLocation(target.getLocation(), locationRounding);
-                            hunter.sendMessage("§f" + (i + 1) + ". §e" + b.getTarget() + ": " + loc.getWorld().getName() + "(X: " + loc.getBlockX() + ", Y: " + loc.getBlockZ() + ")");
+                            hunter.sendMessage("§f" + (i + 1) + ". §e" + b.getTarget() + ": " + loc.getWorld().getName() + " (" + loc.getBlockX() + ", " + loc.getBlockZ() + ")");
 
                             Location hunterLoc = hunter.getLocation();
-                            plugin.getBountyManager().informTarget(hunter, target, "You are being targeted by $1 at $2(X: $3, Z: $4).", hunter.getDisplayName(), hunterLoc.getWorld().getName(), Integer.toString(hunterLoc.getBlockX()), Integer.toString(hunterLoc.getBlockZ()));
+                            plugin.getBountyManager().informTarget(hunter, target, "You are being targeted by $1 at $2 (X: $3, Z: $4).", hunter.getDisplayName(), hunterLoc.getWorld().getName(), Integer.toString(hunterLoc.getBlockX()), Integer.toString(hunterLoc.getBlockZ()));
                         }
                     }
                 }

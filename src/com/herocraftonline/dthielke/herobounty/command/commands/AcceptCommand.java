@@ -17,8 +17,8 @@ public class AcceptCommand extends BaseCommand {
     public AcceptCommand(HeroBounty plugin) {
         super(plugin);
         name = "Accept";
-        description = "Accepts a posted bounty for a small contract fee";
-        usage = "§e/bounty accept §9<id#> [deferFee]";
+        description = "Accepts a posted bounty for a small contract fee. Writing true as the second argument defers fee payment";
+        usage = "§e/bounty accept §9<id#> [deferfee=false]";
         minArgs = 1;
         maxArgs = 2;
         identifiers.add("bounty accept");
@@ -53,7 +53,7 @@ public class AcceptCommand extends BaseCommand {
                                 double contractFee = bounty.getContractFee();
 
                                 // Defer fee payment
-                                if(args.length > 1 && args[1].equals("deferFee")) {
+                                if(args.length > 1 && args[1].equalsIgnoreCase("true")) {
                                     contractFee *= plugin.getBountyManager().getContractDeferFee();
                                     bounty.setHunterDeferFee(hunterName, plugin.getBountyManager().getContractDeferFee());
                                 }
@@ -61,7 +61,7 @@ public class AcceptCommand extends BaseCommand {
                                 if (econ.hasAmount(hunterName, contractFee)) {
                                     bounty.addHunter(hunterName);
 
-                                    boolean feeCharged = econ.subtract(hunterName, contractFee, false) != Double.NaN;
+                                    boolean feeCharged = !Double.isNaN(econ.subtract(hunterName, contractFee, false));
 
                                     int bountyDuration = plugin.getBountyManager().getDuration();
 
