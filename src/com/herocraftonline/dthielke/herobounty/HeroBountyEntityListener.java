@@ -87,7 +87,7 @@ public class HeroBountyEntityListener extends EntityListener {
                 if(!plugin.getBountyManager().getBounties().contains(b)) return;
 
                 double contractFee = 0;
-                if(b.getHunterDeferFee(defenderName) != Double.NaN) {
+                if(!Double.isNaN(b.getHunterDeferFee(defenderName))) {
                     Economy econ = plugin.getEconomy();
                     contractFee = b.getContractFee() * (1 - b.getHunterDeferFee(defenderName));
                     econ.subtract(defenderName, contractFee, true);

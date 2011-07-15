@@ -75,14 +75,14 @@ public class BountyManager {
         double penalty = econ.subtract(target.getName(), bounty.getDeathPenalty(), negativeBalances);
 
         double value = bounty.getValue();
-        if(bounty.getHunterDeferFee(hunter.getName()) != Double.NaN) {
+        if(!Double.isNaN(bounty.getHunterDeferFee(hunter.getName()))) {
             value -= bounty.getContractFee() * (1 - bounty.getHunterDeferFee(hunterName));
         }
 
         double award = econ.add(hunter.getName(), value);
-        if (penalty != Double.NaN && award != Double.NaN) {
+        if (!Double.isNaN(penalty) && !Double.isNaN(award)) {
             String awardStr = econ.format(award);
-            String penaltyStr = econ.format(penalty);
+            // String penaltyStr = econ.format(penalty);
             Messaging.broadcast(plugin, "$1 has collected a bounty on $2 for $3!", hunter.getName(), bounty.getTargetDisplayName(), awardStr);
         } else {
             Messaging.broadcast(plugin, "$1 has collected a bounty on $2's head!", hunter.getName(), bounty.getTargetDisplayName());
