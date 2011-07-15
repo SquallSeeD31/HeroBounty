@@ -31,14 +31,22 @@ public class NewCommand extends BaseCommand {
             Player target = plugin.getServer().getPlayer(args[0]);
             if (target != null) {
                 String targetName = target.getName();
+
                 if (target != owner) {
                     if (plugin.getPermissions().canCreateBounty(owner)) {
                         if (plugin.getPermissions().canBeTargetted(target)) {
-                            List<Bounty> bounties = plugin.getBountyManager().getBounties();
-                            bounties.addAll(plugin.getBountyManager().getInactiveBounties());
-                            for (Bounty b : bounties) {
-                                if (b.getTarget().equalsIgnoreCase(targetName)) {
+                            for (Bounty bounty : this.plugin.getBountyManager().getBounties()) {
+                                if (bounty.getTarget().equalsIgnoreCase(targetName)) {
                                     Messaging.send(plugin, owner, "There is already a bounty on $1.", targetName);
+
+                                    return;
+                                }
+                            }
+
+                            for (Bounty bounty : this.plugin.getBountyManager().getInactiveBounties()) {
+                                if (bounty.getTarget().equalsIgnoreCase(targetName)) {
+                                    Messaging.send(plugin, owner, "A new bounty is already being placed on $1.", targetName);
+
                                     return;
                                 }
                             }
@@ -70,7 +78,7 @@ public class NewCommand extends BaseCommand {
 
                                 bounty.delayActivation(plugin);
 
-                                boolean feeCharged = econ.subtract(ownerName, value, false) != Double.NaN;
+                                boolean feeCharged = Double.isNaN(econ.subtract(ownerName, value, false));
 
                                 int delayRelativeTime = (delay < 60) ? delay : (delay < 60 * 60) ? delay / 60 : (delay < (60 * 60 * 24)) ? delay / (60 * 60) : (delay < (60 * 60 * 24 * 7)) ? delay / (60 * 60 * 24) : delay / (60 * 60 * 24 * 7);
                                 String delayRelativeAmount = (delay < 60) ? " seconds" : (delay < 60 * 60) ? " minutes" : (delay < (60 * 60 * 24)) ? " hours" : (delay < (60 * 60 * 24 * 7)) ? " days" : " weeks";

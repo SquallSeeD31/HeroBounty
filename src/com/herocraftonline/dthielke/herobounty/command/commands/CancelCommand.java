@@ -60,7 +60,8 @@ public class CancelCommand extends BaseCommand {
                     // Prevent negative
                     if(refund < 0) refund = 0;
 
-                    boolean reimbursed = econ.add(ownerName, refund) != Double.NaN;
+                    boolean reimbursed = !Double.isNaN(econ.add(ownerName, refund));
+
                     if (reimbursed) {
                         Messaging.send(plugin, owner, "You have been reimbursed $1 for your bounty.", econ.format(refund));
                     } else {
@@ -72,16 +73,15 @@ public class CancelCommand extends BaseCommand {
                         int inconvenience = (int) Math.floor((double) bounty.getPostingFee() / hunters.size());
                         for (String hunterName : bounty.getHunters()) {
                             double contractFee = bounty.getContractFee();
-                            if(bounty.getHunterDeferFee(hunterName) != Double.NaN) {
+                            if(!Double.isNaN(bounty.getHunterDeferFee(hunterName))) {
                                 contractFee *= bounty.getHunterDeferFee(hunterName);
                             }
 
-                            reimbursed = econ.add(hunterName, contractFee) != Double.NaN;
+                            reimbursed = !Double.isNaN(econ.add(hunterName, contractFee));
 
                             if (plugin.getBountyManager().shouldPayInconvenience()) {
                                 econ.add(hunterName, inconvenience);
                             }
-
 
                             Player hunter = plugin.getServer().getPlayer(hunterName);
                             if (hunter != null) {
