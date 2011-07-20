@@ -73,8 +73,8 @@ public class CancelCommand extends BaseCommand {
                         int inconvenience = (int) Math.floor((double) bounty.getPostingFee() / hunters.size());
                         for (String hunterName : bounty.getHunters()) {
                             double contractFee = bounty.getContractFee();
-                            if(!Double.isNaN(bounty.getHunterDeferFee(hunterName))) {
-                                contractFee *= bounty.getHunterDeferFee(hunterName);
+                            if(plugin.getBountyManager().getFeeDeferring()) {
+                                contractFee *= plugin.getBountyManager().getContractDeferFee();
                             }
 
                             reimbursed = !Double.isNaN(econ.add(hunterName, contractFee));

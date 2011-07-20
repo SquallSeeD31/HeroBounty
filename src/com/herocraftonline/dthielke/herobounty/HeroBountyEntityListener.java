@@ -8,7 +8,6 @@
 
 package com.herocraftonline.dthielke.herobounty;
 
-import java.util.HashMap;
 import java.util.List;
 
 import org.bukkit.entity.Entity;
@@ -22,108 +21,93 @@ import org.bukkit.event.entity.EntityListener;
 import com.herocraftonline.dthielke.herobounty.util.Economy;
 import com.herocraftonline.dthielke.herobounty.util.Messaging;
 
+import com.iConomy.iConomy;
+
 public class HeroBountyEntityListener extends EntityListener {
     public static HeroBounty plugin;
-
-    private HashMap<String, String> deathRecords = new HashMap<String, String>();
 
     public HeroBountyEntityListener(HeroBounty plugin) {
         HeroBountyEntityListener.plugin = plugin;
     }
 
-    public void onEntityDamage(EntityDamageEvent event) {
-        if (event.isCancelled())
+    @Override
+    public void onEntityDeath(EntityDeathEvent event) {
+        Entity attacker = null;
+        Entity defender = event.getEntity();
+        EntityDamageEvent damageEvent;
+        String attackerName, defenderName;
+
+        if (!(defender instanceof Player)) {
             return;
-
-        if (!(event.getEntity() instanceof Player))
-            return;
-
-        Player defender = (Player) event.getEntity();
-        int health = defender.getHealth();
-        int damage = event.getDamage();
-        String defenderName = defender.getName();
-        String attackerName = "NOT_A_PLAYER";
-
-        if (event instanceof EntityDamageByProjectileEvent) {
-            EntityDamageByProjectileEvent subEvent = (EntityDamageByProjectileEvent) event;
-            Entity attacker = subEvent.getDamager();
-            if (attacker instanceof Player)
-                attackerName = ((Player) attacker).getName();
-        } else if (event instanceof EntityDamageByEntityEvent) {
-            EntityDamageByEntityEvent subEvent = (EntityDamageByEntityEvent) event;
-            Entity attacker = subEvent.getDamager();
-            if (attacker instanceof Player)
-                attackerName = ((Player) attacker).getName();
         }
 
-        tryAddDeathRecord(defenderName, attackerName, health, damage);
-    }
+        damageEvent = defender.getLastDamageCause();
+        if (damageEvent instanceof EntityDamageByProjectileEvent) {
+            attacker = ((EntityDamageByProjectileEvent) damageEvent).getDamager();
+        } else if (damageEvent instanceof EntityDamageByEntityEvent) {
+            attacker = ((EntityDamageByEntityEvent) damageEvent).getDamager();
+        }
 
-    public void onEntityDeath(EntityDeathEvent event) {
-        Entity entity = event.getEntity();
-        if (!(entity instanceof Player))
+        if (!(attacker instanceof Player)) {
             return;
+        }
 
-        Player defender = (Player) entity;
-
-        String defenderName = defender.getName();
-        String attackerName = deathRecords.get(defenderName);
+        attackerName = ((Player) attacker).getName();
+        defenderName = ((Player) defender).getName();
 
         List<Bounty> bounties = plugin.getBountyManager().getBounties();
-
         for (int i = 0; i < bounties.size(); i++) {
-            Bounty b = bounties.get(i);
+            Bounty bounty = bounties.get(i);
 
-            if (b.getTarget().equalsIgnoreCase(defenderName) && b.isHunter(attackerName)) {
-                plugin.getBountyManager().checkBountyExpiration(0);
-                if(!plugin.getBountyManager().getBounties().contains(b)) return;
-
-                plugin.getBountyManager().completeBounty(i, attackerName);
-                deathRecords.remove(defenderName);
-
-                return;
-            } else if (b.getTarget().equalsIgnoreCase(attackerName) && b.isHunter(defenderName)) {
-                plugin.getBountyManager().checkBountyExpiration(0);
-                if(!plugin.getBountyManager().getBounties().contains(b)) return;
-
-                double contractFee = 0;
-                if(!Double.isNaN(b.getHunterDeferFee(defenderName))) {
-                    Economy econ = plugin.getEconomy();
-                    contractFee = b.getContractFee() * (1 - b.getHunterDeferFee(defenderName));
-                    econ.subtract(defenderName, contractFee, true);
+            if (bounty.getTarget().equals(defenderName) && bounty.isHunter(attackerName)) {
+                if (!plugin.getBountyManager().checkBountyExpiration(i)) {
+                    plugin.getBountyManager().completeBounty(i, attackerName);
                 }
 
-                b.removeHunter(defenderName);
-                deathRecords.remove(defenderName);
+                return;
+            } else if (bounty.getTarget().equals(attackerName) && bounty.isHunter(defenderName)) {
+                double contractFee = 0;
+                boolean expired;
 
-                if(b.decreaseExpiration(plugin.getBountyManager().getDurationReduction())) {
+                if (plugin.getBountyManager().checkBountyExpiration(i)) {
+                    return;
+                }
+
+                bounty.removeHunter(defenderName);
+
+                expired = !bounty.decreaseExpiration(plugin.getBountyManager().getDurationReduction());
+                if (expired) {
+                    plugin.getBountyManager().removeBounty(i);
+                }
+
+                plugin.saveData();
+
+                if(plugin.getBountyManager().getFeeDeferring()) {
+                    Economy econ = plugin.getEconomy();
+
+                    contractFee = bounty.getContractFee() * (1 - plugin.getBountyManager().getContractDeferFee());
+                    econ.subtract(defenderName, contractFee, true);
+
+                    Messaging.send(plugin, (Player) defender, "Your bounty on $1 has been canceled by your death, you have lost $2.", bounty.getTargetDisplayName(), iConomy.format(contractFee));
+                } else {
+                    Messaging.send(plugin, (Player) defender, "Your bounty on $1 has been canceled by your death.", bounty.getTargetDisplayName());
+                }
+
+                if(!expired) {
                     int durationReduction = plugin.getBountyManager().getDurationReduction();
                     int durationReductionRelativeTime = (durationReduction < 60) ? durationReduction : (durationReduction < (60 * 24)) ? durationReduction / 60 : (durationReduction < (60 * 24 * 7)) ? durationReduction / (60 * 24) : durationReduction / (60 * 24 * 7);
                     String durationReductionRelativeAmount = (durationReduction < 60) ? " minutes" : (durationReduction < (60 * 24)) ? " hours" : (durationReduction < (60 * 24 * 7)) ? " days" : " weeks";
-                    if(durationReductionRelativeTime == 1) durationReductionRelativeAmount = durationReductionRelativeAmount.substring(0, durationReductionRelativeAmount.length() - 1);
 
-                    Messaging.send(plugin, defender, "Your bounty on $1 has been canceled by your death, you have lost $2c", b.getTargetDisplayName(), Double.toString(contractFee));
+                    if(durationReductionRelativeTime == 1) {
+                        durationReductionRelativeAmount = durationReductionRelativeAmount.substring(0, durationReductionRelativeAmount.length() - 1);
+                    }
 
-                    if(plugin.getServer().getPlayer(b.getOwner()) != null) {
-                        Messaging.send(plugin, plugin.getServer().getPlayer(b.getOwner()), "The expiration time for your bounty on $1 has been reduced by $2$3.", b.getTargetDisplayName(), Integer.toString(durationReductionRelativeTime), durationReductionRelativeAmount);
+                    if(plugin.getServer().getPlayer(bounty.getOwner()) != null) {
+                        Messaging.send(plugin, plugin.getServer().getPlayer(bounty.getOwner()), "The expiration time for your bounty on $1 has been reduced by $2$3.", bounty.getTargetDisplayName(), Integer.toString(durationReductionRelativeTime), durationReductionRelativeAmount);
                     }
                 }
 
                 return;
-            }
-        }
-    }
-
-    private void tryAddDeathRecord(String defenderName, String attackerName, int health, int damage) {
-        health -= damage;
-
-        if (health > 0)
-            return;
-
-        for (Bounty b : plugin.getBountyManager().getBounties()) {
-            if (b.getTarget().equalsIgnoreCase(defenderName)) {
-                deathRecords.put(defenderName, attackerName);
-                break;
             }
         }
     }

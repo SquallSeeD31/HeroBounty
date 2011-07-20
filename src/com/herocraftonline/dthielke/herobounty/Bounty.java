@@ -28,7 +28,6 @@ public class Bounty extends TimerTask implements Comparable<Bounty> {
     private String ownerDisplayName = "";
     private String targetDisplayName = "";
     private List<String> hunters = new ArrayList<String>();
-    private HashMap<String, Double> hunterDeferFees = new HashMap<String, Double>();
     private Point2D targetLocation = new Point2D.Double();
     private int value = 0;
     private int postingFee = 0;
@@ -163,31 +162,7 @@ public class Bounty extends TimerTask implements Comparable<Bounty> {
     }
 
     public void removeHunter(String name) {
-        if(this.hunterDeferFees.containsKey(name)) {
-            this.hunterDeferFees.remove(name);
-        }
-
         hunters.remove(name);
-    }
-
-    public HashMap<String, Double> getHunterDeferFees() {
-        return this.hunterDeferFees;
-    }
-
-    public double getHunterDeferFee(String name) {
-        if(this.isHunter(name)) {
-            if(this.hunterDeferFees.containsKey(name)) {
-                return this.hunterDeferFees.get(name);
-            }
-        }
-
-        return Double.NaN;
-    }
-
-    public void setHunterDeferFee(String name, double deferFee) {
-        if(this.isHunter(name)) {
-            this.hunterDeferFees.put(name, deferFee);
-        }
     }
 
     public void setContractFee(int contractFee) {
