@@ -1,6 +1,6 @@
 name: HeroBounty
-version: 1.8.8
-author: DThielke
+version: 1.9
+authors: [DThielke, Xolsom]
 main: com.herocraftonline.dthielke.herobounty.HeroBounty
 description: Provides a bounty system with iConomy support
 commands:
