@@ -8,7 +8,10 @@ bounty-fee-percent: 10
 #percent of the award value hunters must pay to accept a contract
 contract-fee-percent: 5
 
-#percent of the contract fee a hunter has to pay early if he decides to use the defer option
+#whether the contract fee will be deferred or not
+contract-fee-deferring: true
+
+#percent of the contract fee a hunter has to pay early when deferring
 contract-defer-fee-percent: 10
 
 #percent of the award value that the killed target loses

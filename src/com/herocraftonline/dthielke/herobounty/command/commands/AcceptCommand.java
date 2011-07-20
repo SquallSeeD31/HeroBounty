@@ -17,10 +17,10 @@ public class AcceptCommand extends BaseCommand {
     public AcceptCommand(HeroBounty plugin) {
         super(plugin);
         name = "Accept";
-        description = "Accepts a posted bounty for a small contract fee. Writing true as the second argument defers fee payment";
-        usage = "§e/bounty accept §9<id#> [deferfee=false]";
+        description = "Accepts a posted bounty for a small contract fee";
+        usage = "§e/bounty accept §9<id#>";
         minArgs = 1;
-        maxArgs = 2;
+        maxArgs = 1;
         identifiers.add("bounty accept");
     }
 
@@ -52,10 +52,8 @@ public class AcceptCommand extends BaseCommand {
                                 Economy econ = plugin.getEconomy();
                                 double contractFee = bounty.getContractFee();
 
-                                // Defer fee payment
-                                if(args.length > 1 && args[1].equalsIgnoreCase("true")) {
+                                if(plugin.getBountyManager().getFeeDeferring()) {
                                     contractFee *= plugin.getBountyManager().getContractDeferFee();
-                                    bounty.setHunterDeferFee(hunterName, plugin.getBountyManager().getContractDeferFee());
                                 }
 
                                 if (econ.hasAmount(hunterName, contractFee)) {
@@ -63,8 +61,7 @@ public class AcceptCommand extends BaseCommand {
 
                                     boolean feeCharged = !Double.isNaN(econ.subtract(hunterName, contractFee, false));
 
-                                    int bountyDuration = plugin.getBountyManager().getDuration();
-
+                                    int bountyDuration = bounty.getMinutesLeft();
                                     int bountyRelativeTime = (bountyDuration < 60) ? bountyDuration : (bountyDuration < (60 * 24)) ? bountyDuration / 60 : (bountyDuration < (60 * 24 * 7)) ? bountyDuration / (60 * 24) : bountyDuration / (60 * 24 * 7);
                                     String bountyRelativeAmount = (bountyDuration < 60) ? " minutes" : (bountyDuration < (60 * 24)) ? " hours" : (bountyDuration < (60 * 24 * 7)) ? " days" : " weeks";
 

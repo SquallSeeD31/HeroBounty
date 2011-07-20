@@ -21,6 +21,7 @@ public class BountyManager {
     private double minimumValue;
     private double placementFee;
     private double contractFee;
+    private boolean feeDeferring;
     private double contractDeferFee;
     private double deathFee;
     private boolean payInconvenience;
@@ -75,8 +76,8 @@ public class BountyManager {
         double penalty = econ.subtract(target.getName(), bounty.getDeathPenalty(), negativeBalances);
 
         double value = bounty.getValue();
-        if(!Double.isNaN(bounty.getHunterDeferFee(hunter.getName()))) {
-            value -= bounty.getContractFee() * (1 - bounty.getHunterDeferFee(hunterName));
+        if(this.feeDeferring) {
+            value -= bounty.getContractFee() * (1 - this.contractDeferFee);
         }
 
         double award = econ.add(hunter.getName(), value);
@@ -125,6 +126,22 @@ public class BountyManager {
         }
 
         return removed;
+    }
+
+    public void removeBounty(int bountyId) {
+        Bounty bounty = bounties.remove(bountyId);
+
+        for(String hunterName : bounty.getHunters()) {
+            Player hunter = plugin.getServer().getPlayer(hunterName);
+            if(hunter != null) {
+                 Messaging.send(plugin, hunter, "Your bounty on $1 has expired.", bounty.getTargetDisplayName());
+            }
+        }
+
+        Player owner = plugin.getServer().getPlayer(bounty.getOwner());
+        if(owner != null) {
+            Messaging.send(plugin, owner, "Your bounty on $1 has expired.", bounty.getTargetDisplayName());
+        }
     }
 
     public boolean isTarget(Player player) {
@@ -208,6 +225,14 @@ public class BountyManager {
 
     public void setContractFee(double contractFee) {
         this.contractFee = contractFee;
+    }
+
+    public boolean getFeeDeferring() {
+        return this.feeDeferring;
+    }
+
+    public void setFeeDeferring(boolean feeDeferring) {
+        this.feeDeferring = feeDeferring;
     }
 
     public double getContractDeferFee() {
